@@ -13,8 +13,13 @@ const config = {
 		adapter: adapter({
 			pages: 'build',
 			assets: 'build',
-			fallback: 'index.html'
-		})
+			fallback: 'index.html',
+			precompress: false,
+			strict: true
+		}), 
+		prerender: {
+			entries: [] // This replaces the old 'default' option
+		}
 	},
 	onwarn: (warning, handler) => {
 		const { code, _ } = warning;
