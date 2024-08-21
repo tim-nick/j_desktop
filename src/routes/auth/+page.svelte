@@ -15,7 +15,7 @@
 	let mode = 'signin';
 
 	let name = '';
-	let email = '';
+	let email = 'timnicknacken@gmail.com'; // Default email for testing
 	let password = '';
 
 	const setSessionUser = async (sessionUser) => {
