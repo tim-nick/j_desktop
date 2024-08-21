@@ -4,7 +4,7 @@ _old
 uploads
 .ipynb_checkpoints
 *.db
-./data/config.json
+/data/config.json
 _test
 Pipfile
 !/data
