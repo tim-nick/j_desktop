@@ -1,31 +1,50 @@
+<!-- src/lib/components/TextEditor.svelte -->
 <script>
-    // You can add any necessary logic here, such as handling input events.
-    let content = "";  // This will hold the content of the editor if needed
-  </script>
-  
-  <div
-    contenteditable="true"
-    bind:innerHTML={content}
-    class="editor"
-    on:input={(e) => content = e.target.innerHTML}
-  ></div>
-  
-  <style>
-    /* The editor will fill its parent container */
-    .editor {
-      width: 100%;
-      height: 100%;
-      background-color: white;
-      color: black;
-      padding: 10px;
-      border-radius: 5px;
-      box-sizing: border-box;  /* Ensure padding doesn't affect width/height */
-      overflow-y: auto;  /* Allow scrolling if content overflows */
+    let content = "";
+</script>
+
+<div class="editor-container">
+    <div
+        contenteditable="true"
+        bind:innerHTML={content}
+        class="editor"
+        on:input={(e) => content = e.target.innerHTML}
+    ></div>
+</div>
+
+<style>
+    /* Reset styles for the editor container */
+    .editor-container * {
+        all: unset;
+        box-sizing: border-box;
     }
-  
-    /* Optional: Add some basic styling for paragraphs */
-    .editor p {
-      margin: 0;
-      padding: 5px 0;
+
+    /* Apply the editor's own styles */
+    .editor-container .editor {
+        width: 100%;
+        height: 100%;
+        background-color: white;
+        color: black;
+        padding: 10px;
+        border-radius: 5px;
+        overflow-y: auto;
+        /* Apply any other custom styles for your editor */
     }
-  </style>
+
+    /* Optional: Add specific styles for paragraphs or other inline elements */
+    .editor-container .editor p {
+        margin: 1em 0;
+    }
+
+    .editor-container .editor h1 {
+        font-size: 2em;
+        margin-bottom: 0.5em;
+    }
+
+    .editor-container .editor h2 {
+        font-size: 1.75em;
+        margin-bottom: 0.5em;
+    }
+
+    /* Add other custom styles as needed */
+</style>
