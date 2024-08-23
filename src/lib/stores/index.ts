@@ -47,6 +47,27 @@ export const currentChatPage = writable(1);
 
 export type Model = OpenAIModel | OllamaModel;
 
+
+// Define the Document and Folder types
+export interface DocumentEditor {
+	id: number;
+	title: string;
+	content: string;
+	folder_id: number;
+	// favorite ? : boolean;
+  }
+  
+  export interface FolderEditor {
+	id: number;
+	name: string;
+	isOpen: boolean;
+	documentsEditor: number[];
+  }
+  
+  // Create writable stores
+  export const documentsEditorStore = writable<DocumentEditor[]>([]);
+  export const foldersEditorStore = writable<FolderEditor[]>([]);
+
 type BaseModel = {
 	id: string;
 	name: string;

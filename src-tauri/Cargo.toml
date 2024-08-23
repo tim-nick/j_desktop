@@ -19,6 +19,15 @@ dotenv = "0.15.0"  # For loading .env variables
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 tauri = { version = "1.7.0", features = [] }
+rusqlite = { version = "0.28.0", features = ["bundled"] }
+thiserror = "1.0"
+log = "0.4"
+env_logger = "0.9"
+
+# Zotero
+#tokio = { version = "1", features = ["full"] }
+# reqwest = { version = "0.11", features = ["json"] }
+
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.
