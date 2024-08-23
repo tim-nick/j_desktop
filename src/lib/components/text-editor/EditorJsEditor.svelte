@@ -3,7 +3,7 @@
   import { invoke } from '@tauri-apps/api/tauri';
   import { get } from 'svelte/store';
   import type { DocumentEditor } from '$lib/stores';
-  import {documentsEditorStore } from '$lib/stores'
+  import {documentsEditorStore } from '$lib/stores';
   import { page } from '$app/stores';
 
   // Editor JS Tools
