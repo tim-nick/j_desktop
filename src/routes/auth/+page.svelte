@@ -86,6 +86,8 @@
 
 	onMount(async () => {
 		if ($user !== undefined) {
+			console.log('User Role:', $user?.role);
+			console.log('new chat via auth page because I am logged in');
 			await goto('/');
 		}
 		await checkOauthCallback();

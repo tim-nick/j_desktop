@@ -278,9 +278,11 @@
 				on:click={async () => {
 					selectedChatId = null;
 					await goto('/');
+					console.log('new-chat-button triggered ');
 					const newChatButton = document.getElementById('new-chat-button');
 					setTimeout(() => {
 						newChatButton?.click();
+						console.log('new-chat-button pressed after timeout');
 						if ($mobile) {
 							showSidebar.set(false);
 						}

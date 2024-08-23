@@ -12,6 +12,7 @@
 
 	onMount(async () => {
 		if ($user?.role !== 'admin') {
+			console.log('User Role:', $user?.role);
 			await goto('/');
 		}
 		loaded = true;
@@ -79,7 +80,9 @@
 				</a>
 
 				<a
-					class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/workspace/tools')
+					class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes(
+						'/workspace/tools'
+					)
 						? 'bg-gray-50 dark:bg-gray-850'
 						: ''} transition"
 					href="/workspace/tools"

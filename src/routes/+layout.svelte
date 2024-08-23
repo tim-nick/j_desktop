@@ -76,6 +76,7 @@
 
 			document.addEventListener('visibilitychange', async () => {
 				// Re-request the wake lock if the document becomes visible
+				console.log('visibilitychange', document.visibilityState);
 				if (wakeLock !== null && document.visibilityState === 'visible') {
 					await setWakeLock();
 				}
@@ -163,12 +164,14 @@
 					} else {
 						// Redirect Invalid Session User to /auth Page
 						localStorage.removeItem('token');
+						console.log('Invalid token found1, redirecting to /auth');
 						await goto('/auth');
 					}
 				} else {
 					// Don't redirect if we're already on the auth page
 					// Needed because we pass in tokens from OAuth logins via URL fragments
 					if ($page.url.pathname !== '/auth') {
+						console.log('No token found2, redirecting to /auth ', $page.url.pathname);
 						await goto('/auth');
 					}
 				}

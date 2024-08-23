@@ -65,6 +65,7 @@
 			func = JSON.parse(event.data);
 			console.log(func);
 		});
+		console.log(' mounted Function create');
 
 		if (window.opener ?? false) {
 			window.opener.postMessage('loaded', '*');

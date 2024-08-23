@@ -64,6 +64,12 @@
 					href="/text-editor/documents">{$i18n.t('Documents')}</a
 				>
 				<!-- Add more tabs here if needed -->
+				<a
+				class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/text-editor/')
+					? 'bg-gray-50 dark:bg-gray-850'
+					: ''} transition"
+				href="/text-editor/test">{$i18n.t('Test')}</a
+			>
 			</div>
 		</div>
 
