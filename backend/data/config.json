@@ -59,7 +59,7 @@
 			"https://api.openai.com/v1"
 		],
 		"api_keys": [
-			"sk-"
+			""
 		]
 	},
 	"ollama": {
