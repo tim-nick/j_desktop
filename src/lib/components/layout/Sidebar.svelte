@@ -200,7 +200,8 @@
 	const saveSettings = async (updated) => {
 		await settings.set({ ...$settings, ...updated });
 		await updateUserSettings(localStorage.token, { ui: $settings });
-		location.href = '/';
+		console.log('Settings saved:', $settings);
+		// location.href = '/';
 	};
 
 	const deleteChatHandler = async (id) => {
