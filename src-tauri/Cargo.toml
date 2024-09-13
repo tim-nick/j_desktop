@@ -23,6 +23,7 @@ rusqlite = { version = "0.28.0", features = ["bundled"] }
 thiserror = "1.0"
 log = "0.4"
 env_logger = "0.9"
+reqwest = { version = "0.11", features = ["json"] }
 
 # Zotero
 #tokio = { version = "1", features = ["full"] }

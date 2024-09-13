@@ -1,0 +1,16 @@
+.heading-tool {
+    padding: 10px;
+  }
+  
+  .heading-tool input {
+    font-size: 16px;
+    padding: 8px;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  
+  .heading-tool select {
+    margin-bottom: 8px;
+    font-size: 16px;
+    padding: 4px;
+  }

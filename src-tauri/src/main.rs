@@ -8,14 +8,20 @@ use std::thread;
 use std::sync::{Arc, Mutex};
 use rusqlite::{Connection, Error as RusqliteError};
 
-use db::{EditorDocument, Document, Folder, save_document, load_document, gen_side_bar_list, update_document,  load_documents, insert_new_folder, load_folders};
+use db::{EditorDocument, Document, Folder, PythonBackendDocument ,create_python_document, save_document,load_document, load_document_for_editor, gen_side_bar_list, update_document,  load_documents, insert_new_folder, load_folders};
 use tauri::command;
 use error::AppError;
 use std::fs;
 
+use reqwest::Client;
+use serde_json::json;
+use tauri::async_runtime::spawn;
+
 
 mod db;
 mod error;
+
+
 
 
 
@@ -40,14 +46,20 @@ fn fetch_folders_command() -> Result<Vec<Folder>, String> {
 fn save_document_command(doc: EditorDocument) -> Result<(), String> {
     println!("Executing save document command");
     let conn = Connection::open(DB_PATH).map_err(|e| e.to_string())?;
-    save_document(&conn, &doc).map_err(|e| e.to_string())
+    save_document(&conn, &doc).map_err(|e| e.to_string())?;
+
+    // Use async spawn to handle the asynchronous request to the Python backend
+    
+    Ok(())
 }
 
 #[tauri::command]
 fn load_document_command(id: i64) -> Result<EditorDocument, String> {
     println!("Executing load document command");
     let conn = Connection::open(DB_PATH).map_err(|e| e.to_string())?;
-    load_document(&conn, id).map_err(|e| e.to_string())
+    //load_document(&conn, id).map_err(|e| e.to_string())
+    load_document_for_editor(&conn, id).map_err(|e| e.to_string())
+
 }
 
 #[tauri::command]
@@ -86,6 +98,89 @@ fn create_new_folder_command(name: String)-> Result<(), String>{
     insert_new_folder(&conn, &name).map_err(|e| e.to_string());
     Ok(())
 }
+
+#[tauri::command]
+fn create_document_in_python_backend(id: i64) -> Result<(), String> {
+    println!("create new Python backend file ");
+    
+    // Spawn the async function in the background
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = create_document_in_python_backend2(id).await {
+            println!("Failed to create document in Python backend: {:?}", e);
+        }
+    });
+
+    println!("created new Python backend file as embedding");
+
+    Ok(())
+}
+
+
+async fn create_document_in_python_backend2(id: i64) -> Result<(), Box<dyn std::error::Error>> {
+    let conn = Connection::open(DB_PATH).map_err(|e| e.to_string())?;
+
+    let doc:Result<db::Document, AppError> = load_document(&conn, id);
+
+    match doc {
+        Ok(doc) => {
+            // Call the create_python_document function and pass the Document
+            let python_doc = create_python_document(&doc);
+            
+            // Create the JSON body using the PythonBackendDocument
+            let body = json!(python_doc);
+            
+            // You can now use 'body' in your HTTP request or further logic
+
+            let client = Client::new();
+            let res = client
+                .post("http://127.0.0.1:8080/files/")
+                .bearer_auth("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE1ZmZlYzBiLWVmOTQtNDNjOS1iZGUwLThjYzA2MDE2ZTZkYiJ9.Kt4yaWNkoh__EncCCi4BqxlASpKTqtlcjBJwL7oyXm0")
+                .json(&body)
+                .send()
+                .await?;
+
+            if res.status().is_success() {
+                println!("Document created in Python backend.");
+            } else {
+                println!("Failed to create document: {:?}", res);
+            }
+        },
+        Err(e) => {
+            // Handle the error here (e.g., log the error, return a response, etc.)
+            println!("Failed to load document: {:?}", e);
+        }
+    }
+
+    // let body = &doc;
+
+    
+
+    Ok(())
+}
+
+
+// async fn update_document_in_python_backend(id: i64, doc: &EditorDocument) -> Result<(), Box<dyn std::error::Error>> {
+//     let body = json!({
+//         "name": doc.title,
+//         "title": doc.title,
+//     });
+
+//     let client = Client::new();
+//     let res = client
+//         .post("http://127.0.0.1:8080/doc/update?name={doc.title}")
+//         .json(&body)
+//         .send()
+//         .await?;
+
+//     if res.status().is_success() {
+//         println!("Document updated in Python backend.");
+//     } else {
+//         println!("Failed to update document: {:?}", res);
+//     }
+
+//     Ok(())
+// }
+
 
 fn initialize_database() -> Result<(), AppError> {
     let path = Path::new(DB_PATH).parent().unwrap();
@@ -132,7 +227,8 @@ fn main() {
             update_document_command,
             create_new_folder_command,
             fetch_documents_command,
-            fetch_folders_command
+            fetch_folders_command,
+            create_document_in_python_backend
         ])  
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -9,8 +9,11 @@
   // Editor JS Tools
   import EditorJS from '@editorjs/editorjs';
   import Header from '@editorjs/header';
-  import List from '@editorjs/list';
+  // import List from '@editorjs/list';
   import NestedList from '@editorjs/nested-list';
+  import Checklist from '@editorjs/checklist';
+  import Paragraph from '$lib/components/text-editor/editor-tools/paragraph/src/index'
+  // import HeadingTool from '$lib/components/text-editor/editor-tools/HeadingTool'
 
   //export let id: number;
   export let current_docId: number = 1; // The document ID to be loaded
@@ -28,55 +31,50 @@
   // Subscribe to the page store, query
   $: ({ url, params } = $page);
   $: queryParams = new URLSearchParams(url.search);
-
-  // onMount(() => {
-  //   editor = new EditorJS({
-  //     holder: 'editorjs',
-  //     tools: {
-  //       header: {
-  //         class: Header,
-  //         inlineToolbar: ['link'],
-  //       },
-  //       list: {
-  //         class: List,
-  //         inlineToolbar: true,
-  //       },
-  //     },
-  //     onReady: () => {
-  //       console.log('Editor.js is ready to work!');
-  //     },
-  //     data: { blocks: [] },
-  //   });
-  // });
-    // Initialize Editor.js
-    onMount(() => {
-      console.log('Current URL:', url);
-      console.log('Route Parameters:', params);
-      editor = new EditorJS({
-        holder: 'editorjs',
-        tools: {
-          header: {
-            class: Header as any  , // TypeScript workaround
-            inlineToolbar: ['link'],
-          },
-          list: {
-            class: List as any, // TypeScript workaround
-            inlineToolbar: true,
-          },
-          nestedList: {
-            class: NestedList as any, // TypeScript workaround
-            inlineToolbar: true,
-          },
-        },
-        onReady: () => {
-          console.log('Editor.js is ready to work!');
-          if (current_docId) {
-            loadDocument(current_docId); // Load the document when the editor is ready
+  // Initialize Editor.js
+  onMount(() => {
+    console.log('Current URL:', url);
+    console.log('Route Parameters:', params);
+    editor = new EditorJS({
+      holder: 'editorjs',
+      defaultBlock: 'Paragraph',
+      tools: {
+        header: {
+          class: Header as any  , // TypeScript workaround
+          shortcut: 'CMD+SHIFT+H',
+          inlineToolbar: ['link'],
+          config: {
+            placeholder: 'Enter a header',
+            levels: [1, 2, 3, 4, 5],
+            defaultLevel: 1
           }
         },
-        data: { blocks: [] },
-      });
-  });
+        Paragraph: {
+          class: Paragraph,
+          inlineToolbar: true,
+          config: {
+            placeholder: 'Enter a paragraph',
+          }
+        },
+        // heading: HeadingTool,
+        nestedList: {
+          class: NestedList as any, // TypeScript workaround
+          inlineToolbar: true,
+        },
+        checklist: {
+          class: Checklist,
+          inlineToolbar: true,
+        },
+      },
+      onReady: () => {
+        console.log('Editor.js is ready to work!');
+        if (current_docId) {
+          loadDocument(current_docId); // Load the document when the editor is ready
+        }
+      },
+      data: { blocks: [] },
+    });
+});
 
 
   // First editor db interface 
@@ -122,6 +120,22 @@
       console.error('Error saving document:', error);
     }
   }
+
+
+  // Save document to python backend
+
+  async function savePythonDoc() {
+    const inputElement = document.getElementById('myInput') as HTMLInputElement;
+    // const id = current_docId;
+        // console.log('Prompt returned:', id);
+        if (inputElement) {
+          const id = parseInt(inputElement.value, 10);
+          await invoke('create_document_in_python_backend', { id })
+        } else {
+          console.log("No id entered")
+        }
+  }
+
 
   // Update document
   async function updateDocument() {
@@ -203,6 +217,7 @@ $: if (current_docId) {
 <button on:click={saveDocument}>Save File</button>
 <button on:click={updateDocument}>Update File</button>
 <button on:click={newFile}>New File</button>
+<button on:click={savePythonDoc}>New Python File</button>
 <input type="text" id="myInput" placeholder="id">
 
 <div id="editorjs"></div>
@@ -219,17 +234,44 @@ $: if (current_docId) {
   }
 
   :global(#editorjs .ce-block) {
-    margin-bottom: 20px;
+    /* margin-bottom: 20px; */
+    margin-bottom: 0 !important; /* Or set it to a smaller value as necessary */
   }
-
-  :global(#editorjs .ce-header) {
-    font-size: 2em;
+  :global(#editorjs .ce-block h1) {
+  font-size: 2em;
+  font-weight: bold;
+  /* margin: 20px 0; */
+  }
+  :global(#editorjs h2) {
+    font-size: 1.75em;
     font-weight: bold;
-    margin: 20px 0;
+    margin: 18px 0;
+  }
+  :global(#editorjs h3) {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin: 16px 0;
+  }
+  :global(#editorjs h4) {
+    font-size: 1.25em;
+    font-weight: bold;
+    margin: 14px 0;
+  }
+  :global(#editorjs h5) {
+    font-size: 1.0em;
+    font-weight: bold;
+    margin: 12px 0;
+  }
+  :global(#editorjs h6) {
+    font-size: 0.75em;
+    font-weight: bold;
+    margin: 10px 0;
   }
 
   :global(#editorjs .ce-paragraph) {
-    font-size: 1em;
-    line-height: 1.5;
+    /* font-size: 1em; */
+    /* line-height: 1.5; */
+    padding: 0;
+    /* text-align: center; */
   }
 </style>

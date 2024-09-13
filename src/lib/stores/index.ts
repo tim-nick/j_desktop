@@ -55,18 +55,24 @@ export interface DocumentEditor {
 	content: string;
 	folder_id: number;
 	// favorite ? : boolean;
-  }
+}
   
-  export interface FolderEditor {
+export interface FolderEditor {
 	id: number;
 	name: string;
 	isOpen: boolean;
 	documentsEditor: number[];
-  }
+}
   
-  // Create writable stores
-  export const documentsEditorStore = writable<DocumentEditor[]>([]);
-  export const foldersEditorStore = writable<FolderEditor[]>([]);
+// Create writable stores
+export const documentsEditorStore = writable<DocumentEditor[]>([]);
+// {
+//     id: 1,
+//     title: 'Untitled Document',
+//     content: '# Welcome to the Editor\nStart typing your content here.',
+//     folder_id: 1
+//   }
+export const foldersEditorStore = writable<FolderEditor[]>([]);
 
 type BaseModel = {
 	id: string;

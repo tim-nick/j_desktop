@@ -21,6 +21,7 @@
 		"tauri": "tauri"
 	},
 	"devDependencies": {
+		"@editorjs/checklist": "^1.6.0",
 		"@sveltejs/adapter-auto": "3.2.2",
 		"@sveltejs/adapter-static": "^3.0.2",
 		"@sveltejs/kit": "^2.5.20",
@@ -71,6 +72,7 @@
 		"codemirror": "^6.0.1",
 		"crc-32": "^1.2.2",
 		"dayjs": "^1.11.10",
+		"dompurify": "^3.1.6",
 		"eventsource-parser": "^1.1.2",
 		"file-saver": "^2.0.5",
 		"fuse.js": "^7.0.0",
@@ -85,6 +87,9 @@
 		"marked-katex-extension": "^5.1.1",
 		"mermaid": "^10.9.1",
 		"pyodide": "^0.26.1",
+		"remark": "^15.0.1",
+		"remark-gfm": "^4.0.0",
+		"remark-html": "^16.0.1",
 		"socket.io-client": "^4.2.0",
 		"sortablejs": "^1.15.2",
 		"svelte-sonner": "^0.3.19",

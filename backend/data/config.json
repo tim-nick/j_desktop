@@ -59,12 +59,23 @@
 			"https://api.openai.com/v1"
 		],
 		"api_keys": [
-			""
+			"sk-ekK9avWPNBDF3FDLQARpf0Es0BFtADnRKRyl3to1dNT3BlbkFJwcTiqnmkZlywUWgR_0cXsbWxVl0ImHQ6VNg8xmUQgA"
 		]
 	},
 	"ollama": {
 		"base_urls": [
 			"http://localhost:11434"
 		]
+	},
+	"image_generation": {
+		"engine": "openai",
+		"enable": true,
+		"openai": {
+			"api_base_url": "https://api.openai.com/v1",
+			"api_key": "sk-ekK9avWPNBDF3FDLQARpf0Es0BFtADnRKRyl3to1dNT3BlbkFJwcTiqnmkZlywUWgR_0cXsbWxVl0ImHQ6VNg8xmUQgA"
+		},
+		"model": "dall-e-3",
+		"size": "512x512",
+		"steps": 50
 	}
 }

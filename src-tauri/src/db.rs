@@ -2,14 +2,14 @@ use rusqlite::{params, Connection, Result};
 use serde::{Deserialize, Serialize};
 use crate::error::AppError;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct EditorDocument {
     pub time: i64,
     pub blocks: Vec<Block>,
     pub version: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Block {
     pub id: String,
     pub r#type: String, // Use `r#type` to avoid the Rust keyword conflict
@@ -32,6 +32,25 @@ pub struct Folder {
     pub documents: Vec<i64>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PythonBackendDocument {
+    pub collection_name: String,
+    pub name: String,
+    pub title: String,
+    pub filename: String,
+    pub content: String,
+}
+
+pub fn create_python_document(doc: &Document) -> PythonBackendDocument {
+    PythonBackendDocument {
+        collection_name: "my_notes".to_string(), // You can adjust this to be dynamic if needed
+        name: doc.title.clone(), // Use the title of the document as the name
+        title: doc.title.clone(), // Use the title of the document
+        filename: format!("{}.json", doc.title), // Create a filename based on the title
+        content: doc.content.clone(), // Use the content directly from the Document
+    }
+}
+
 
 pub fn save_document(conn: &Connection, doc: &EditorDocument) -> Result<(), AppError> {
     let doc_json = serde_json::to_string(&doc)?;
@@ -43,7 +62,7 @@ pub fn save_document(conn: &Connection, doc: &EditorDocument) -> Result<(), AppE
     Ok(())
 }
 
-pub fn load_document(conn: &Connection, id: i64) -> Result<EditorDocument, AppError> {
+pub fn load_document_for_editor(conn: &Connection, id: i64) -> Result<EditorDocument, AppError> {
     println!("Loading Doc with id: {} ...", id);
     // Prepare the statement
     let mut stmt = conn.prepare("SELECT id, title, time, content, folder_id FROM documents WHERE id = ?1")?;
@@ -85,6 +104,26 @@ pub fn load_documents(conn: &Connection) -> Result<Vec<Document>, AppError> {
     
     Ok(docs)
 }
+
+
+pub fn load_document(conn: &Connection, id: i64) -> Result<Document, AppError> {
+    let mut stmt = conn.prepare("SELECT id, title, time, content, folder_id FROM documents WHERE id = ?1")?;
+    
+    let doc = stmt.query_row([id], |row| {
+        let content_json: String = row.get(3)?;
+        Ok(Document {
+            id: row.get(0)?,
+            title: row.get(1)?,
+            time: row.get(2)?,
+            content: content_json,
+            folder_id: row.get(4)?,
+        })
+    })?;
+
+    Ok(doc)
+}
+
+
 pub fn load_folders(conn: &Connection) -> Result<Vec<Folder>, AppError> {
     let mut stmt = conn.prepare("SELECT id, name FROM folders")?;
     let folders = stmt.query_map([], |row| {

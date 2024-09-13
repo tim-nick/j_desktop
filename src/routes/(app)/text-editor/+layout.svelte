@@ -11,6 +11,7 @@
 	let loaded = false;
 
 	onMount(async () => {
+		console.log("layout test");
 		if ($user?.role !== 'admin') {
 			await goto('/');
 		}
@@ -49,29 +50,6 @@
 			</div>
 		</div>
 
-
-
-
-        <!-- Subpage navigation documents-->
-		<div class="px-4 my-1">
-			<div
-				class="flex scrollbar-none overflow-x-auto w-fit text-center text-sm font-medium rounded-xl bg-transparent/10 p-1"
-			>
-				<a
-					class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/text-editor/')
-						? 'bg-gray-50 dark:bg-gray-850'
-						: ''} transition"
-					href="/text-editor/documents">{$i18n.t('Documents')}</a
-				>
-				<!-- Add more tabs here if needed -->
-				<a
-				class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/text-editor/')
-					? 'bg-gray-50 dark:bg-gray-850'
-					: ''} transition"
-				href="/text-editor/test">{$i18n.t('Test')}</a
-			>
-			</div>
-		</div>
 
 		<hr class=" my-2 dark:border-gray-850" />
 

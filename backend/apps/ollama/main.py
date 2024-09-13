@@ -155,8 +155,10 @@ async def post_streaming_url(url: str, payload: str, stream: bool = True):
         )
         r = await session.post(url, data=payload)
         r.raise_for_status()
-
+        # Chat answer backend logic 
         if stream:
+            # streaming answer back 
+            print("streaming answer back")
             return StreamingResponse(
                 r.content,
                 status_code=r.status,
