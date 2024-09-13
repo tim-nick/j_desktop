@@ -16,6 +16,8 @@ import type {
   ToolConfig,
   ToolboxConfig,
 } from '@editorjs/editorjs';
+// My import
+import NestedList, { ListData } from '@editorjs/nested-list'; // Adjust the import path as needed
 
 /**
  * Base Paragraph Block for the Editor.js.
@@ -210,24 +212,127 @@ export default class Paragraph {
         console.log("Found: "+ parsedHTML)
         
         // Determine the level dynamically based on the tag
-        const match = parsedHTML.match(/<h([1-6])>(.*?)<\/h[1-6]>/); 
+        const match_heading = parsedHTML.match(/<h([1-6])>(.*?)<\/h[1-6]>/);
+        // const match_list = parsedHTML.match(/^- (.*?)$/gm);
+        console.log("match list:")
+        // const match_list = parsedHTML.match(/<ul>\s*<li>(.*?)<\/li>\s*<\/ul>/gs);
 
-        const level = parseInt(match[1], 10); // Extracts the level (1-6)
-        const text = match[2]; // Extracts the inner text
+        // if (match_list) {
+        //   match_list.forEach((match, index) => {
+        //     console.log(`Match ${index + 1}:`, match);
+        //   });
+        // } else {
+        //   console.log("No matches found.");
+        // }
+
+        const match_list = parsedHTML.match(/<li>(.*?)<\/li>/);
+
+        if (match_list) {
+          match_list.forEach((match, index) => {
+            console.log(`Match ${index + 1}:`, match);
+          });
+        } else {
+          console.log("No matches found.");
+        }
+
+
+        // Heading
+        let level;
+        let text;
+
+        //list
+        let nestedListData:ListData;
+        
+
+        if (match_heading) {
+          level = parseInt(match_heading[1], 10); // Extracts the level (1-6)
+          text = match_heading[2]; // Extracts the inner text
+
+        } 
+        if (match_list) {
+          console.log("Found a list ")
+          console.log(test)
+          test = ""
+          // test.replace("-", "");
+          // test.replace(" ", "");
+          // currentIndex = this.api.blocks.getCurrentBlockIndex();
+          // Define the data for the Nested List block
+          nestedListData = {
+            style: 'unordered', // or 'ordered'
+            items: [
+              {
+                content: test,
+                items: [] // No nested items
+              }
+            ]
+          };
+        }
+
+
         const index = this.api.blocks.getCurrentBlockIndex();
-        console.log("Current Block result : " + String(level) + " " + text);
+        // console.log("Current Block result : " + String(level) + " " + text);
+
+
+        // DEbug
+        console.log("############################")
+        console.log('')
+        console.log("current Block index: ")
+        console.log(index)
+
+        console.log('')
+
+        console.log("match_list: ")
+        console.log(match_list)
+
+        console.log('')
+
+        console.log("match_heading: ")
+        console.log(match_heading)
+
+
+
+  
+
+
+        
+
         if (level != null && lastChar != null && lastChar == '&nbsp;') {
+          console.log("Outer insertion")
+
+
+            if (match_heading) {
+
+              // Insert the header block based on the parsed data
+              this.api.blocks.insert("header", {
+                text: text,
+                level: level, // Dynamically set the level (h1-h6)
+              }, {}, index, true);
+              console.log("Inserted block: " + String(level) + " " + text);
+              this.api.blocks.delete(index+1);
+
+            }
+            
 
           // Insert the header block based on the parsed data
-          this.api.blocks.insert("header", {
-            text: text,
-            level: level, // Dynamically set the level (h1-h6)
-          }, {}, index, true);
-          console.log("Inserted block: " + String(level) + " " + text);
-          this.api.blocks.delete(index+1);
+          // this.api.blocks.insert("header", {
+          //   text: text,
+          //   level: level, // Dynamically set the level (h1-h6)
+          // }, {}, index, true);
+          // console.log("Inserted block: " + String(level) + " " + text);
+          // this.api.blocks.delete(index+1);
           
         } else {
-          console.log("no heading found");
+          console.log("wtf ");
+        }
+
+        if (match_list) {
+          // Insert the Nested List block at the current index
+          this.api.blocks.insert('nestedList', nestedListData, {}, index, true);
+          this.api.blocks.delete(index+1); 
+          console.log("Inserted:")
+          console.log(nestedListData)
+        } else {
+          console.log("NOthing to enter");
         }
       }
     }
@@ -248,6 +353,20 @@ export default class Paragraph {
     if (textContent === '' && test !=  null) {
       this._element.innerHTML = '';
     }
+
+
+
+    const totalBlocks = this.api.blocks.getBlocksCount();
+    const blockIds: string[] = [];
+  
+    for (let i = 0; i < totalBlocks; i++) {
+      const block = this.api.blocks.getBlockByIndex(i);
+      if (block) {
+        blockIds.push(block.name);
+      }
+    }
+  
+     console.log(blockIds)
   }
 
   /**

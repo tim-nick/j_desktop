@@ -11,7 +11,7 @@
   import Header from '@editorjs/header';
   // import List from '@editorjs/list';
   import NestedList from '@editorjs/nested-list';
-  import Checklist from '@editorjs/checklist';
+  import Checklist from '@editorjs/checklist'; //TODO: implement md parser function for - [] and - [x]
   import Paragraph from '$lib/components/text-editor/editor-tools/paragraph/src/index'
   // import HeadingTool from '$lib/components/text-editor/editor-tools/HeadingTool'
 
@@ -240,32 +240,38 @@ $: if (current_docId) {
   :global(#editorjs .ce-block h1) {
   font-size: 2em;
   font-weight: bold;
+  padding: 0;
   /* margin: 20px 0; */
   }
   :global(#editorjs h2) {
     font-size: 1.75em;
     font-weight: bold;
     margin: 18px 0;
+    padding: 0;
   }
   :global(#editorjs h3) {
     font-size: 1.5em;
     font-weight: bold;
     margin: 16px 0;
+    padding: 0;
   }
   :global(#editorjs h4) {
     font-size: 1.25em;
     font-weight: bold;
     margin: 14px 0;
+    padding: 0;
   }
   :global(#editorjs h5) {
     font-size: 1.0em;
     font-weight: bold;
     margin: 12px 0;
+    padding: 0;
   }
   :global(#editorjs h6) {
     font-size: 0.75em;
     font-weight: bold;
     margin: 10px 0;
+    padding: 0;
   }
 
   :global(#editorjs .ce-paragraph) {

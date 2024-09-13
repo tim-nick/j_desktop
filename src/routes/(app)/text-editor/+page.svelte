@@ -3,20 +3,20 @@
 	// Optionally use your other Editor component as needed
 	import Editor from '$lib/components/text-editor/Editor.svelte';
 
-	const markdownContent = `
-# Hello, GitHub Markdown!
+// 	const markdownContent = `
+// # Hello, GitHub Markdown!
 
-This is a **bold** text and this is *italic*.
-## This is h2
+// This is a **bold** text and this is *italic*.
+// ## This is h2
 
-- List item 1
-- List item 2
-  - nested list 
+// - List item 1
+// - List item 2
+//   - nested list 
 
-\`\`\`javascript
-console.log('Code block');
-\`\`\`
-  `;
+// \`\`\`javascript
+// console.log('Code block');
+// \`\`\`
+//   `;
 </script>
 
 <!-- Render the main editor component -->
