@@ -1,0 +1,14 @@
+.cdx-flashcard {
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+}
+
+.flashcard-item {
+    margin-bottom: 10px;
+    font-family: sans-serif;
+}
+
+.flashcard-item strong {
+    color: #333;
+}

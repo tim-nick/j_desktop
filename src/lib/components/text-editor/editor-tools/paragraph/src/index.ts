@@ -18,6 +18,8 @@ import type {
 } from '@editorjs/editorjs';
 // My import
 import NestedList, { ListData } from '@editorjs/nested-list'; // Adjust the import path as needed
+// import Flashcard from '$lib/components/text-editor/editor-tools/Flashcards/';
+import Flashcard, {FlashcardData} from "../../Flashcards"
 
 /**
  * Base Paragraph Block for the Editor.js.
@@ -209,6 +211,7 @@ export default class Paragraph {
         test = test.replace("&nbsp;", "");
         console.log("Test: " + test);
         const parsedHTML:string  = await parser.parse_md(test);
+        const parsedFlashcard:string = await parser.parsing_flashcards(test, this.api);
         console.log("Found: "+ parsedHTML)
         
         // Determine the level dynamically based on the tag
@@ -242,6 +245,9 @@ export default class Paragraph {
 
         //list
         let nestedListData:ListData;
+
+        //flashcard 
+        let flashcardData:FlashcardData;
         
 
         if (match_heading) {
@@ -268,12 +274,16 @@ export default class Paragraph {
           };
         }
 
+        if (test != "") {
+          console.log(e.key, e.altKey)
+        }
+
 
         const index = this.api.blocks.getCurrentBlockIndex();
         // console.log("Current Block result : " + String(level) + " " + text);
 
 
-        // DEbug
+        // Debug
         console.log("############################")
         console.log('')
         console.log("current Block index: ")
@@ -288,11 +298,6 @@ export default class Paragraph {
 
         console.log("match_heading: ")
         console.log(match_heading)
-
-
-
-  
-
 
         
 
@@ -326,6 +331,8 @@ export default class Paragraph {
         }
 
         if (match_list) {
+
+          
           // Insert the Nested List block at the current index
           this.api.blocks.insert('nestedList', nestedListData, {}, index, true);
           this.api.blocks.delete(index+1); 

@@ -9,10 +9,13 @@
   // Editor JS Tools
   import EditorJS from '@editorjs/editorjs';
   import Header from '@editorjs/header';
-  // import List from '@editorjs/list';
-  import NestedList from '@editorjs/nested-list';
   import Checklist from '@editorjs/checklist'; //TODO: implement md parser function for - [] and - [x]
+  // import List from '@editorjs/list';
+  // import NestedList from '@editorjs/nested-list';
+  import NestedList from '$lib/components/text-editor/editor-tools/nested-list'
   import Paragraph from '$lib/components/text-editor/editor-tools/paragraph/src/index'
+
+  import Flashcard from '$lib/components/text-editor/editor-tools/Flashcards';
   // import HeadingTool from '$lib/components/text-editor/editor-tools/HeadingTool'
 
   //export let id: number;
@@ -65,6 +68,7 @@
           class: Checklist,
           inlineToolbar: true,
         },
+        flashcard: Flashcard,
       },
       onReady: () => {
         console.log('Editor.js is ready to work!');
