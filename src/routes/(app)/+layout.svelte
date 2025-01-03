@@ -53,6 +53,7 @@
 
 	onMount(async () => {
 		if ($user === undefined) {
+			console.log("user note defined thats why ")
 			await goto('/auth');
 		} else if (['user', 'admin'].includes($user.role)) {
 			try {
@@ -63,6 +64,7 @@
 					const chats = await DB.getAllFromIndex('chats', 'timestamp');
 					localDBChats = chats.map((item, idx) => chats[chats.length - 1 - idx]);
 
+					
 					if (localDBChats.length === 0) {
 						await deleteDB('Chats');
 					}
