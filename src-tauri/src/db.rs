@@ -1,6 +1,8 @@
 use rusqlite::{params, Connection, Result};
 use serde::{Deserialize, Serialize};
 use crate::error::AppError;
+// use chrono::{DateTime, Utc};
+use std::time::{Instant};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct EditorDocument {
@@ -40,6 +42,20 @@ pub struct PythonBackendDocument {
     pub filename: String,
     pub content: String,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Calendar {
+
+}
+
+// #[derive(Serialize, Deserialize, Debug)]
+// pub struct Timer {
+//     pub id: i64,
+//     pub start: Instant,
+//     pub stop: Instant,
+//     pub duration: i64,
+//     pub calendar: Calendar
+// }
 
 pub fn create_python_document(doc: &Document) -> PythonBackendDocument {
     PythonBackendDocument {
@@ -147,18 +163,6 @@ pub fn load_folders(conn: &Connection) -> Result<Vec<Folder>, AppError> {
     
     Ok(folders)
 }
-// pub fn load_folders(conn: &Connection) -> Result<Vec<Folder>, AppError> {
-//     let mut stmt = conn.prepare("SELECT id, name FROM folders")?;
-//     let folders = stmt.query_map([], |row| {
-//         Ok(Folder {
-//             id: row.get(0)?,
-//             name: row.get(1)?,
-//         })
-//     })?
-//     .collect::<Result<Vec<Folder>, rusqlite::Error>>()?;
-    
-//     Ok(folders)
-// }
 
 pub fn gen_side_bar_list(conn: &Connection) -> Result<Vec<Document>, AppError> {
     let mut stmt = conn.prepare("SELECT id, title, time, content, folder_id FROM documents")?;

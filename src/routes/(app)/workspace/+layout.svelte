@@ -100,6 +100,17 @@
 				>
 					{$i18n.t('Functions')}
 				</a>
+
+				<a
+					class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes(
+						'/workspace/agents'
+					)
+						? 'bg-gray-50 dark:bg-gray-850'
+						: ''} transition"
+					href="/workspace/agents"
+				>
+					{$i18n.t('Agents')}
+				</a>
 			</div>
 		</div>
 

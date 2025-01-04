@@ -22,9 +22,6 @@ mod db;
 mod error;
 
 
-
-
-
 // const DB_PATH: &str = "../sqlite_database/documents.db";
 const DB_PATH: &str = "/Users/tim/Documents/Programming/Projects/J.A.R.V.I.S./database/database.db";
 
@@ -112,6 +109,12 @@ fn create_document_in_python_backend(id: i64) -> Result<(), String> {
 
     println!("created new Python backend file as embedding");
 
+    Ok(())
+}
+
+#[tauri::command]
+fn create_new_timer() -> Result<(), String> {
+    
     Ok(())
 }
 
