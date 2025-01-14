@@ -1,5 +1,7 @@
 <script>
     import { onMount } from 'svelte';
+
+    // https://chatgpt.com/share/67798e15-413c-8002-b2ca-dd6aeff2efb8
   
     let canvas;
     let ctx;

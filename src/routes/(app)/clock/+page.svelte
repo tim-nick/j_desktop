@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { invoke } from '@tauri-apps/api/tauri';
 
     let workDuration: number = 25; // Default work duration in minutes
     let breakDuration: number = 5; // Default break duration in minutes
@@ -7,6 +8,10 @@
     let timer: NodeJS.Timeout | null = null;
     let isWorkSession: boolean = true;
     let isTimerRunning: boolean = false;
+
+    let isExtended: boolean = false; // Indicates if the session is currently extended
+    let extensionStartTime: Date | null = null; // Records the start time of the extension
+    let totalWorkDuration: number = workDuration * 60; // Tracks the total work duration
 
     // Format time as MM:SS
     function formatTime(seconds: number): string {
@@ -21,35 +26,74 @@
         isTimerRunning = true;
         remainingTime = isWorkSession ? workDuration * 60 : breakDuration * 60;
         timer = setInterval(() => {
-        if (remainingTime > 0) {
-            remainingTime--;
-        } else {
-            clearInterval(timer!);
-            isTimerRunning = false;
-            isWorkSession = !isWorkSession;
-            alert(isWorkSession ? 'Break over! Time to work.' : 'Work session over! Time for a break.');
-        }
+            if (remainingTime > 0) {
+                remainingTime--;
+            } else {
+                clearInterval(timer!);
+                isTimerRunning = false;
+                if (isWorkSession) {
+                    // Work session ended, prompt user action
+                    alert('Work session over! Choose "Extend" to continue or "Start Break" to proceed.');
+                } else {
+                    // Break session ended
+                    saveSession();
+                    alert('Break over! Time to work.');
+                    isWorkSession = true; // Reset for next work session
+                }
+            }
         }, 1000);
     }
 
-    // Cancel the timer
-    function cancelTimer() {
-        if (timer) {
-        clearInterval(timer);
-        timer = null;
-        }
-        isTimerRunning = false;
-        remainingTime = 0;
+    // Save session data
+    function saveSession() {
+        const startTimeWork = new Date().toISOString(); // This should track actual session start time
+        const stopTimeWork = new Date().toISOString(); // This should track actual session stop time
+        invoke('save_session', {
+            workDuration: totalWorkDuration,
+            breakDuration: breakDuration * 60,
+            startTimeWork: startTimeWork,
+            stopTimeWork: stopTimeWork,
+            extended: isExtended,
+            extendedStartTime: extensionStartTime ? extensionStartTime.toISOString() : null,
+            extendedStopTime: new Date().toISOString(),
+        });
+        resetTimer();
     }
 
-    // Extend the current session by a specified number of minutes
+    // Reset timer for the next session
+    function resetTimer() {
+        remainingTime = 0;
+        isTimerRunning = false;
+        isExtended = false;
+        extensionStartTime = null;
+        totalWorkDuration = workDuration * 60;
+    }
+
+    // Start the extension
     function extendTimer() {
-        const extensionMinutes = parseInt(prompt('Enter extension time in minutes:', '5') || '0');
-        if (!isNaN(extensionMinutes) && extensionMinutes > 0) {
-        remainingTime += extensionMinutes * 60;
-        } else {
-        alert('Invalid input. Please enter a positive number.');
-        }
+        if (isTimerRunning || isExtended) return;
+        isExtended = true;
+        extensionStartTime = new Date();
+        alert('Extension started. Press "End Extension" to finalize.');
+    }
+
+    // End the extension
+    function endExtension() {
+        if (!isExtended || !extensionStartTime) return;
+        const extensionEndTime = new Date();
+        const extensionDuration = Math.floor((extensionEndTime.getTime() - extensionStartTime.getTime()) / 1000); // in seconds
+        totalWorkDuration += extensionDuration;
+        isExtended = false;
+        extensionStartTime = null;
+        isWorkSession = false;
+        alert(`Extension ended. You extended your session by ${formatTime(extensionDuration)}.`);
+    }
+
+    // Start the break
+    function startBreak() {
+        if (isTimerRunning) return;
+        isWorkSession = false;
+        startTimer();
     }
 </script>
 
@@ -67,9 +111,10 @@
         {formatTime(remainingTime)}
     </div>
     <div class="button-group">
-        <button on:click={startTimer} disabled={isTimerRunning}>Start</button>
-        <button on:click={cancelTimer} disabled={!isTimerRunning}>Cancel</button>
-        <button on:click={extendTimer} disabled={!isTimerRunning}>Extend</button>
+        <button on:click={startTimer} disabled={isTimerRunning || isExtended}>Start</button>
+        <button on:click={extendTimer} disabled={isTimerRunning || !isWorkSession}>Extend</button>
+        <button on:click={endExtension} disabled={!isExtended}>End Extension</button>
+        <button on:click={startBreak} disabled={isTimerRunning || isWorkSession}>Start Break</button>
     </div>
 </main>
 
