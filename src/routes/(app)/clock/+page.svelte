@@ -44,19 +44,64 @@
         }, 1000);
     }
 
-    // Save session data
+    // // Save session data
+    // function saveSession() {
+    //     const startTimeWork = new Date().toISOString(); // This should track actual session start time
+    //     const stopTimeWork = new Date().toISOString(); // This should track actual session stop time
+    //     invoke('save_timer_session', {
+    //         workDuration: totalWorkDuration,
+    //         breakDuration: breakDuration * 60,
+    //         startTimeWork: startTimeWork,
+    //         stopTimeWork: stopTimeWork,
+    //         extended: isExtended,
+    //         extendedStartTime: extensionStartTime ? extensionStartTime.toISOString() : null,
+    //         extendedStopTime: new Date().toISOString(),
+    //     });
+    //     resetTimer();
+    // }
+
     function saveSession() {
-        const startTimeWork = new Date().toISOString(); // This should track actual session start time
-        const stopTimeWork = new Date().toISOString(); // This should track actual session stop time
-        invoke('save_session', {
-            workDuration: totalWorkDuration,
-            breakDuration: breakDuration * 60,
-            startTimeWork: startTimeWork,
-            stopTimeWork: stopTimeWork,
-            extended: isExtended,
-            extendedStartTime: extensionStartTime ? extensionStartTime.toISOString() : null,
-            extendedStopTime: new Date().toISOString(),
-        });
+        const startTimeWork = new Date().toISOString(); // Track actual session start time
+        const stopTimeWork = new Date(new Date().getTime() + totalWorkDuration * 1000).toISOString(); // Simulate stop time
+        const startTimeBreak = isWorkSession ? null : new Date().toISOString(); // Break starts after work session
+        const stopTimeBreak = isWorkSession
+            ? null
+            : new Date(new Date().getTime() + breakDuration * 60 * 1000).toISOString(); // Simulate break stop time
+
+        // Wrap the session object under the `session` key
+        invoke('save_timer_session_command', {
+            session: {
+                work_duration: workDuration, // Snake case
+                break_duration: breakDuration, // Snake case
+                start_time_work: startTimeWork, // Snake case
+                stop_time_work: stopTimeWork, // Snake case
+                start_time_break: startTimeBreak, // Snake case
+                stop_time_break: stopTimeBreak, // Snake case
+                extended: isExtended,
+                extended_start_time: extensionStartTime ? extensionStartTime.toISOString() : null, // Snake case
+                extended_stop_time: isExtended ? new Date().toISOString() : null, // Snake case
+            },
+        })
+            .then(() => {
+                console.log('Session saved successfully.');
+            })
+            .catch((err) => {
+                console.error('Failed to save session:', err);
+            });
+        
+        console.log({
+            session: {
+                work_duration: workDuration, // Snake case
+                break_duration: breakDuration, // Snake case
+                start_time_work: startTimeWork, // Snake case
+                stop_time_work: stopTimeWork, // Snake case
+                start_time_break: startTimeBreak, // Snake case
+                stop_time_break: stopTimeBreak, // Snake case
+                extended: isExtended,
+                extended_start_time: extensionStartTime ? extensionStartTime.toISOString() : null, // Snake case
+                extended_stop_time: isExtended ? new Date().toISOString() : null, // Snake case
+            },
+        })
         resetTimer();
     }
 
@@ -114,7 +159,7 @@
         <button on:click={startTimer} disabled={isTimerRunning || isExtended}>Start</button>
         <button on:click={extendTimer} disabled={isTimerRunning || !isWorkSession}>Extend</button>
         <button on:click={endExtension} disabled={!isExtended}>End Extension</button>
-        <button on:click={startBreak} disabled={isTimerRunning || isWorkSession}>Start Break</button>
+        <button on:click={startBreak} disabled={isTimerRunning || !isWorkSession}>Start Break</button>
     </div>
 </main>
 

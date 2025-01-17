@@ -43,19 +43,25 @@ pub struct PythonBackendDocument {
     pub content: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Calendar {
-
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct TimerSession {
+    pub work_duration: i32,             // Work session duration in seconds
+    pub break_duration: i32,            // Break session duration in seconds
+    pub start_time_work: String,        // ISO 8601 formatted start time
+    pub stop_time_work: String,         // ISO 8601 formatted stop time
+    pub start_time_break: Option<String>, // Optional ISO 8601 start time for break
+    pub stop_time_break: Option<String>,  // Optional ISO 8601 stop time for break
+    pub extended: bool,                 // Indicates if the session was extended
+    pub extended_start_time: Option<String>, // Optional ISO 8601 start time for the extension
+    pub extended_stop_time: Option<String>,  // Optional ISO 8601 stop time for the extension
 }
 
 // #[derive(Serialize, Deserialize, Debug)]
-// pub struct Timer {
-//     pub id: i64,
-//     pub start: Instant,
-//     pub stop: Instant,
-//     pub duration: i64,
-//     pub calendar: Calendar
+// pub struct Calendar {
+
 // }
+
+
 
 pub fn create_python_document(doc: &Document) -> PythonBackendDocument {
     PythonBackendDocument {
@@ -212,5 +218,35 @@ pub fn update_document(conn: &Connection, id: i64, new_doc: &Document) -> Result
 
 pub fn insert_new_folder(conn: &Connection, name: &str) -> Result<(), AppError> {
     conn.execute("INSERT INTO folders (name) VALUES (?)", params![name])?;
+    Ok(())
+}
+
+pub fn save_timer_session(conn: &Connection, session: &TimerSession) -> Result<(), AppError> {
+    conn.execute(
+        "INSERT INTO timer_sessions (
+            work_duration, 
+            break_duration, 
+            start_time_work, 
+            stop_time_work, 
+            start_time_break, 
+            stop_time_break, 
+            extended, 
+            extended_start_time, 
+            extended_stop_time
+        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        params![
+            session.work_duration,
+            session.break_duration,
+            session.start_time_work,
+            session.stop_time_work,
+            session.start_time_break,
+            session.stop_time_break,
+            session.extended,
+            session.extended_start_time,
+            session.extended_stop_time
+        ],
+    ).map_err(AppError::SqliteError)?;
+
+    println!("Timer session saved successfully.");
     Ok(())
 }

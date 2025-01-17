@@ -8,7 +8,7 @@ use std::thread;
 use std::sync::{Arc, Mutex};
 use rusqlite::{Connection, Error as RusqliteError};
 
-use db::{EditorDocument, Document, Folder, PythonBackendDocument ,create_python_document, save_document,load_document, load_document_for_editor, gen_side_bar_list, update_document,  load_documents, insert_new_folder, load_folders};
+use db::{EditorDocument, Document, Folder, PythonBackendDocument, TimerSession ,create_python_document, save_document,load_document, load_document_for_editor, gen_side_bar_list, update_document,  load_documents, insert_new_folder, load_folders, save_timer_session};
 use tauri::command;
 use error::AppError;
 use std::fs;
@@ -113,11 +113,15 @@ fn create_document_in_python_backend(id: i64) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn create_new_timer() -> Result<(), String> {
-    
+fn save_timer_session_command(session: TimerSession) -> Result<(), String> {
+    println!("Executing save timer session command");
+     // Log the incoming session data for debugging
+     println!("Save Session: {:?}", session);
+    let conn = Connection::open(DB_PATH).map_err(|e| e.to_string())?;
+    save_timer_session(&conn, &session).map_err(|e| e.to_string())?;
+    println!("Timer session saved successfully.");
     Ok(())
 }
-
 
 async fn create_document_in_python_backend2(id: i64) -> Result<(), Box<dyn std::error::Error>> {
     let conn = Connection::open(DB_PATH).map_err(|e| e.to_string())?;
@@ -162,27 +166,7 @@ async fn create_document_in_python_backend2(id: i64) -> Result<(), Box<dyn std::
 }
 
 
-// async fn update_document_in_python_backend(id: i64, doc: &EditorDocument) -> Result<(), Box<dyn std::error::Error>> {
-//     let body = json!({
-//         "name": doc.title,
-//         "title": doc.title,
-//     });
 
-//     let client = Client::new();
-//     let res = client
-//         .post("http://127.0.0.1:8080/doc/update?name={doc.title}")
-//         .json(&body)
-//         .send()
-//         .await?;
-
-//     if res.status().is_success() {
-//         println!("Document updated in Python backend.");
-//     } else {
-//         println!("Failed to update document: {:?}", res);
-//     }
-
-//     Ok(())
-// }
 
 
 fn initialize_database() -> Result<(), AppError> {
@@ -212,6 +196,23 @@ fn initialize_database() -> Result<(), AppError> {
         [],
     ).map_err(AppError::SqliteError)?;
 
+    // Create a table for timer sessions
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS timer_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            work_duration INTEGER NOT NULL,
+            break_duration INTEGER NOT NULL,
+            start_time_work TEXT NOT NULL,
+            stop_time_work TEXT NOT NULL,
+            start_time_break TEXT,
+            stop_time_break TEXT,
+            extended BOOLEAN NOT NULL,
+            extended_start_time TEXT,
+            extended_stop_time TEXT
+        )",
+        [],
+    ).map_err(AppError::SqliteError)?;
+
     println!("Database initialized successfully.");
     Ok(())
 }
@@ -231,7 +232,8 @@ fn main() {
             create_new_folder_command,
             fetch_documents_command,
             fetch_folders_command,
-            create_document_in_python_backend
+            create_document_in_python_backend,
+            save_timer_session_command
         ])  
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -290,4 +292,27 @@ fn main() {
 //   tauri::Builder::default()
 //     .run(tauri::generate_context!())
 //     .expect("error while running tauri application");
+// }
+
+
+// async fn update_document_in_python_backend(id: i64, doc: &EditorDocument) -> Result<(), Box<dyn std::error::Error>> {
+//     let body = json!({
+//         "name": doc.title,
+//         "title": doc.title,
+//     });
+
+//     let client = Client::new();
+//     let res = client
+//         .post("http://127.0.0.1:8080/doc/update?name={doc.title}")
+//         .json(&body)
+//         .send()
+//         .await?;
+
+//     if res.status().is_success() {
+//         println!("Document updated in Python backend.");
+//     } else {
+//         println!("Failed to update document: {:?}", res);
+//     }
+
+//     Ok(())
 // }
