@@ -1,44 +1,71 @@
 <script>
-    import { onMount } from 'svelte';
-    import { invoke } from '@tauri-apps/api/tauri';
-  
-    let folders = [];
+  import { onMount } from 'svelte';
+  import { invoke } from '@tauri-apps/api/tauri';
+  import FolderItem from '$lib/components/layout/Sidebar/FolderItem.svelte';
 
-    async function fetchFolders() {
-        try {
-            // Call the Tauri command
-            const folders = await invoke('fetch_folders_command');
-            console.log('Fetched folders:', folders);
-            return folders;
-        } catch (error) {
-            console.error('Failed to fetch folders:', error);
-            throw error;
-        }
-    }
-  
-    onMount(async () => {
+  let folders = [];
+
+  async function fetchFolders() {
       try {
-        folders = await fetchFolders();
+          // Call the Tauri command
+          const flatFolders = await invoke('fetch_folders_command');
+          console.log('Fetched folders:', flatFolders);
+
+          // Convert flat folder list to a nested structure
+          return buildFolderTree(flatFolders);
       } catch (error) {
-        console.error('Error loading folders:', error);
+          console.error('Failed to fetch folders:', error);
+          return [];
       }
-    });
-  </script>
+  }
+
+  function buildFolderTree(flatFolders) {
+      const folderMap = new Map();
+
+      // Initialize map with all folders
+      flatFolders.forEach(folder => {
+          folderMap.set(folder.id, { ...folder, subfolders: [] });
+      });
+
+      const rootFolders = [];
+
+      // Organize folders into a tree
+      flatFolders.forEach(folder => {
+          if (folder.parent_id) {
+              const parent = folderMap.get(folder.parent_id);
+              if (parent) {
+                  parent.subfolders.push(folderMap.get(folder.id));
+              }
+          } else {
+              rootFolders.push(folderMap.get(folder.id));
+          }
+      });
+
+      return rootFolders;
+  }
+
+  onMount(async () => {
+      folders = await fetchFolders();
+  });
+</script>
 
 <main>
-    <div>
-        {#if folders.length > 0}
+  <div>
+      {#if folders.length > 0}
           <ul>
-            {#each folders as folder}
-              <li>{folder.name}</li> <!-- Adjust based on the Folder structure -->
-            {/each}
+              {#each folders as folder}
+                  <li><FolderItem {folder} /></li>
+              {/each}
           </ul>
-        {:else}
+      {:else}
           <p>No folders available.</p>
-        {/if}
-      </div>
+      {/if}
+  </div>
 </main>
 
 <style>
-    /* Add any necessary CSS here */
+  ul {
+      list-style: none;
+      padding-left: 20px;
+  }
 </style>

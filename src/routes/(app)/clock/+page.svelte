@@ -159,7 +159,7 @@
         <button on:click={startTimer} disabled={isTimerRunning || isExtended}>Start</button>
         <button on:click={extendTimer} disabled={isTimerRunning || !isWorkSession}>Extend</button>
         <button on:click={endExtension} disabled={!isExtended}>End Extension</button>
-        <button on:click={startBreak} disabled={isTimerRunning || !isWorkSession}>Start Break</button>
+        <button on:click={startBreak} disabled={isTimerRunning }>Start Break</button>
     </div>
 </main>
 

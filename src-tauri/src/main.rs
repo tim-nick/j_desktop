@@ -35,8 +35,27 @@ fn fetch_documents_command() -> Result<Vec<Document>, String> {
 #[tauri::command]
 fn fetch_folders_command() -> Result<Vec<Folder>, String> {
     println!("Executing load folders command");
+    
     let conn = Connection::open(DB_PATH).map_err(|e| e.to_string())?;
-    load_folders(&conn).map_err(|e| e.to_string())
+    
+    load_folders(&conn).map_err(|e| {
+        eprintln!("Error loading folders: {}", e);
+        e.to_string()
+    })
+}
+
+#[tauri::command]
+fn create_new_folder_command(name: String, parent_id: Option<i64>) -> Result<(), String> {
+    println!("Creating new folder: {}", name);
+    
+    let conn = Connection::open(DB_PATH).map_err(|e| e.to_string())?;
+    
+    insert_new_folder(&conn, &name, parent_id).map_err(|e| {
+        eprintln!("Error inserting folder: {}", e);
+        e.to_string()
+    })?;
+    
+    Ok(())
 }
 
 #[tauri::command]
@@ -87,14 +106,7 @@ fn update_document_command(id: i64, doc: EditorDocument) -> Result<(), String> {
     update_document(&conn, id, &db_doc).map_err(|e| e.to_string())
 }
 
-#[tauri::command]
-fn create_new_folder_command(name: String)-> Result<(), String>{
-    println!("create new Folder command");
-    // let conn = Connection::open(DB_PATH).map_err(AppError::SqliteError)?;
-    let conn = Connection::open(DB_PATH).map_err(|e| e.to_string())?;
-    insert_new_folder(&conn, &name).map_err(|e| e.to_string());
-    Ok(())
-}
+
 
 #[tauri::command]
 fn create_document_in_python_backend(id: i64) -> Result<(), String> {

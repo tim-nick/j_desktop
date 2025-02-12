@@ -31,6 +31,7 @@ pub struct Document {
 pub struct Folder {
     pub id: i64,
     pub name: String,
+    pub parent_id: Option<i64>,
     pub documents: Vec<i64>,
 }
 
@@ -146,27 +147,30 @@ pub fn load_document(conn: &Connection, id: i64) -> Result<Document, AppError> {
 }
 
 
-pub fn load_folders(conn: &Connection) -> Result<Vec<Folder>, AppError> {
-    let mut stmt = conn.prepare("SELECT id, name FROM folders")?;
-    let folders = stmt.query_map([], |row| {
-        let id: i64 = row.get(0)?;
-        let name: String = row.get(1)?;
-        
-        // Query the documents table for the documents belonging to this folder
-        let mut doc_stmt = conn.prepare("SELECT id FROM documents WHERE folder_id = ?1")?;
-        let document_ids = doc_stmt.query_map([id], |doc_row| {
-            Ok(doc_row.get(0)?)
-        })?
-        .collect::<Result<Vec<i64>, rusqlite::Error>>()?;
+pub fn load_folders(conn: &Connection) -> Result<Vec<Folder>, rusqlite::Error> {
+    let mut stmt = conn.prepare("SELECT id, name, parent_id FROM folders")?; // Fixed query to include parent_id
 
-        Ok(Folder {
-            id,
-            name,
-            documents: document_ids,  // Fill the Folder struct with document IDs
-        })
-    })?
-    .collect::<Result<Vec<Folder>, rusqlite::Error>>()?;
-    
+    let folders = stmt
+        .query_map([], |row| {
+            let id: i64 = row.get(0)?;
+            let name: String = row.get(1)?;
+            let parent_id: Option<i64> = row.get(2)?; // Handle NULL values properly
+
+            // Fetch document IDs associated with this folder
+            let mut doc_stmt = conn.prepare("SELECT id FROM documents WHERE folder_id = ?")?;
+            let document_ids = doc_stmt
+                .query_map([id], |doc_row| Ok(doc_row.get(0)?))?
+                .collect::<Result<Vec<i64>, rusqlite::Error>>()?;
+
+            Ok(Folder {
+                id,
+                name,
+                parent_id,
+                documents: document_ids,
+            })
+        })?
+        .collect::<Result<Vec<Folder>, rusqlite::Error>>()?;
+
     Ok(folders)
 }
 
@@ -216,8 +220,12 @@ pub fn update_document(conn: &Connection, id: i64, new_doc: &Document) -> Result
     Ok(())
 }
 
-pub fn insert_new_folder(conn: &Connection, name: &str) -> Result<(), AppError> {
-    conn.execute("INSERT INTO folders (name) VALUES (?)", params![name])?;
+// Function to insert a new folder with an optional parent_id
+pub fn insert_new_folder(conn: &Connection, name: &str, parent_id: Option<i64>) -> Result<(), rusqlite::Error> {
+    conn.execute(
+        "INSERT INTO folders (name, parent_id) VALUES (?, ?)",
+        params![name, parent_id], // Corrected query
+    )?;
     Ok(())
 }
 
