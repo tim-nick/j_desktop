@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/tauri';
   import FolderItem from '$lib/components/layout/Sidebar/FolderItem.svelte';
@@ -17,7 +17,32 @@
           console.error('Failed to fetch folders:', error);
           return [];
       }
-  }
+    }
+
+
+    async function createNewFolder() {
+        const folderName = document.getElementById("inputName").value.trim();
+        const parentIdRaw = document.getElementById("inputParentId").value.trim();
+
+        // Convert parentId to an integer if valid, otherwise use null.
+        const parentId = parentIdRaw ? parseInt(parentIdRaw, 10) : null;
+
+        // Use camelCase key: Tauri will convert it to snake_case in Rust.
+        const payload = { name: folderName, parentId: parentId };
+
+        console.log("Payload sent to Rust:", payload);
+
+        try {
+            await invoke("create_new_folder_command", payload);
+        } catch (error) {
+            console.error("Error calling backend:", error);
+        }
+    }
+
+
+
+
+
 
   function buildFolderTree(flatFolders) {
       const folderMap = new Map();
@@ -50,6 +75,11 @@
 </script>
 
 <main>
+    <div>
+        <input id="inputName" type="text" placeholder="Folder Name">
+        <input id="inputParentId" type="text" placeholder="id of parent folder if folder has parent">
+        <button on:click={createNewFolder}>Create Folder</button>
+    </div>
   <div>
       {#if folders.length > 0}
           <ul>
@@ -67,5 +97,11 @@
   ul {
       list-style: none;
       padding-left: 20px;
+  }
+  #inputName{
+    color: black;
+  }
+  #inputParentId{
+    color: black;
   }
 </style>

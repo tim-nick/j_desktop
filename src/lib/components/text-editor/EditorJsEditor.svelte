@@ -126,21 +126,6 @@
   }
 
 
-  // Save document to python backend
-
-  async function savePythonDoc() {
-    const inputElement = document.getElementById('myInput') as HTMLInputElement;
-    // const id = current_docId;
-        // console.log('Prompt returned:', id);
-        if (inputElement) {
-          const id = parseInt(inputElement.value, 10);
-          await invoke('create_document_in_python_backend', { id })
-        } else {
-          console.log("No id entered")
-        }
-  }
-
-
   // Update document
   async function updateDocument() {
     try {
@@ -221,8 +206,10 @@ $: if (current_docId) {
 <button on:click={saveDocument}>Save File</button>
 <button on:click={updateDocument}>Update File</button>
 <button on:click={newFile}>New File</button>
-<button on:click={savePythonDoc}>New Python File</button>
-<input type="text" id="myInput" placeholder="id">
+<!-- <button on:click={savePythonDoc}>New Python File</button> -->
+<input type="text" id="myInput" placeholder="doc-id">
+<input type="text" id="folderId" placeholder="folder-id">
+
 
 <div id="editorjs"></div>
 

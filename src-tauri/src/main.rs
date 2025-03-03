@@ -1,5 +1,6 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+use std::os::unix::process::parent_id;
 use std::process::{Command, Stdio, Child};
 use dotenv::from_filename;
 use std::env;
@@ -15,6 +16,7 @@ use std::fs;
 
 use reqwest::Client;
 use serde_json::json;
+use serde_json::Value;
 use tauri::async_runtime::spawn;
 
 
@@ -23,7 +25,30 @@ mod error;
 
 
 // const DB_PATH: &str = "../sqlite_database/documents.db";
-const DB_PATH: &str = "/Users/tim/Documents/Programming/Projects/J.A.R.V.I.S./database/database.db";
+// const DB_PATH: &str = "/Users/tim/Documents/Programming/Projects/J.A.R.V.I.S./database/database.db";
+const DB_PATH: &str = "/Users/tim/Documents/Programming/Projects/personal_assistant/knowledge-graph/pa_db.db";
+
+// TODO: currently gets foldername as input not filenames fix it to get file isa or file names 
+#[tauri::command]
+fn folder_clicked(name: String) -> Result<EditorDocument, String> {
+    println!("Retrieving doc command ");
+    println!("{}", &name);
+    
+    // Attempt to parse the string into an i64
+    let num = match name.parse::<i64>() {
+        Ok(num) => {
+            println!("Converted number: {}", num);
+            num
+        }
+        Err(e) => return Err(format!("Failed to convert: {}", e)),
+    };
+
+    let conn = Connection::open(DB_PATH).map_err(|e| e.to_string())?;
+    
+    // Call load_document_for_editor only if conversion succeeded
+    load_document_for_editor(&conn, num).map_err(|e| e.to_string())
+}
+
 
 #[tauri::command]
 fn fetch_documents_command() -> Result<Vec<Document>, String> {
@@ -44,19 +69,19 @@ fn fetch_folders_command() -> Result<Vec<Folder>, String> {
     })
 }
 
+
+
 #[tauri::command]
 fn create_new_folder_command(name: String, parent_id: Option<i64>) -> Result<(), String> {
-    println!("Creating new folder: {}", name);
+    println!("Received in Rust -> name: '{}', parent_id: {:?}", name, parent_id);
     
     let conn = Connection::open(DB_PATH).map_err(|e| e.to_string())?;
-    
-    insert_new_folder(&conn, &name, parent_id).map_err(|e| {
-        eprintln!("Error inserting folder: {}", e);
-        e.to_string()
-    })?;
+    insert_new_folder(&conn, &name, parent_id).map_err(|e| e.to_string())?;
     
     Ok(())
 }
+
+
 
 #[tauri::command]
 fn save_document_command(doc: EditorDocument) -> Result<(), String> {
@@ -191,7 +216,8 @@ fn initialize_database() -> Result<(), AppError> {
     conn.execute(
         "CREATE TABLE IF NOT EXISTS folders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL
+            name TEXT NOT NULL,
+            parent_id INTEGER
         )",
         [],
     ).map_err(AppError::SqliteError)?;
@@ -245,7 +271,8 @@ fn main() {
             fetch_documents_command,
             fetch_folders_command,
             create_document_in_python_backend,
-            save_timer_session_command
+            save_timer_session_command,
+            folder_clicked
         ])  
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
