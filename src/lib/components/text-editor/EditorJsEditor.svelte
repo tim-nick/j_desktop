@@ -20,6 +20,7 @@
 
   //export let id: number;
   export let current_docId: number = 1; // The document ID to be loaded
+  export let folderId: number = 0; // TODO: spscify ehre a default folder
 
   let doc: DocumentEditor | undefined;
 
@@ -118,7 +119,9 @@
     try {
       const doc = await editor.save();
       console.log('Saving document:', doc);
-      await invoke('save_document_command', { doc });
+      const inputFolderId = document.getElementById('folderId') as HTMLInputElement;
+      folderId = parseInt(inputFolderId.value, 10);
+      await invoke('save_document_command', { doc, folderId });
       console.log('Document saved successfully');
     } catch (error) {
       console.error('Error saving document:', error);
@@ -132,7 +135,7 @@
       const doc = await editor.save();
       console.log('Updating document:', doc);
       if (current_docId) {
-        await invoke('update_document_command', { id: parseInt(current_docId.toString(), 10), doc: doc });
+        await invoke('update_document_command', { id: parseInt(current_docId.toString(), 10), doc: doc , folderId: parseInt(folderId.toString(), 10)});
         console.log('Document updated successfully');
       } else {
         console.log('No ID entered');

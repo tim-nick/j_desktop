@@ -84,10 +84,10 @@ fn create_new_folder_command(name: String, parent_id: Option<i64>) -> Result<(),
 
 
 #[tauri::command]
-fn save_document_command(doc: EditorDocument) -> Result<(), String> {
+fn save_document_command(doc: EditorDocument, folderId: i64) -> Result<(), String> {
     println!("Executing save document command");
     let conn = Connection::open(DB_PATH).map_err(|e| e.to_string())?;
-    save_document(&conn, &doc).map_err(|e| e.to_string())?;
+    save_document(&conn, &doc, &folderId).map_err(|e| e.to_string())?;
 
     // Use async spawn to handle the asynchronous request to the Python backend
     

@@ -1,5 +1,6 @@
 use rusqlite::{params, Connection, Result};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use crate::error::AppError;
 // use chrono::{DateTime, Utc};
 use std::time::{Instant};
@@ -62,6 +63,14 @@ pub struct TimerSession {
 
 // }
 
+pub fn extract_title(doc: &str) -> Option<String> {
+    let json: Value = serde_json::from_str(doc).ok()?; // Parse JSON
+    let first_block = json.get("blocks")?.get(0)?; // Get first block (index 0)
+    let title = first_block.get("data")?.get("text")?.as_str()?; // Extract "text" field
+
+    Some(title.to_string()) // Convert &str to String
+}
+
 
 
 pub fn create_python_document(doc: &Document) -> PythonBackendDocument {
@@ -75,11 +84,20 @@ pub fn create_python_document(doc: &Document) -> PythonBackendDocument {
 }
 
 
-pub fn save_document(conn: &Connection, doc: &EditorDocument) -> Result<(), AppError> {
+pub fn save_document(conn: &Connection, doc: &EditorDocument, folderId: &i64) -> Result<(), AppError> {
     let doc_json = serde_json::to_string(&doc)?;
+    // TODO call a get title fucntion fr
+    println!("The fodler id : {}", folderId);
+    println!("{}", doc_json);
+    let title = extract_title(&doc_json);
+    let title_str = match title {
+        Some(t) => t, // Extract the value
+        none => "No title found".to_string(), // Provide a default string
+    };
+    println!("Found title: {:?}", &title_str);
     conn.execute(
         "INSERT INTO documents (title, time, content, folder_id) VALUES (?, ?, ?, ?)",
-        params!["TestTitle", &doc.time, &doc_json, "1"],
+        params![&title_str, &doc.time, &doc_json, &folderId],
     )?;
     println!("Saved doc");
     Ok(())
