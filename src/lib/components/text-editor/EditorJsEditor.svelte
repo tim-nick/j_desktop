@@ -134,8 +134,12 @@
     try {
       const doc = await editor.save();
       console.log('Updating document:', doc);
+      const inputFolderId = document.getElementById('folderId') as HTMLInputElement;
+      folderId = parseInt(inputFolderId.value, 10);
+      const inputElement = document.getElementById('myInput') as HTMLInputElement;
+      current_docId = parseInt(inputElement.value, 10);
       if (current_docId) {
-        await invoke('update_document_command', { id: parseInt(current_docId.toString(), 10), doc: doc , folderId: parseInt(folderId.toString(), 10)});
+        await invoke('update_document_command', { id: parseInt(current_docId.toString(), 10), doc: doc , folderId: folderId});
         console.log('Document updated successfully');
       } else {
         console.log('No ID entered');

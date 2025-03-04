@@ -9,7 +9,7 @@ use std::thread;
 use std::sync::{Arc, Mutex};
 use rusqlite::{Connection, Error as RusqliteError};
 
-use db::{EditorDocument, Document, Folder, PythonBackendDocument, TimerSession ,create_python_document, save_document,load_document, load_document_for_editor, gen_side_bar_list, update_document,  load_documents, insert_new_folder, load_folders, save_timer_session};
+use db::{EditorDocument, Document, Folder, PythonBackendDocument, TimerSession ,create_python_document, save_document,load_document, load_document_for_editor, gen_side_bar_list, update_document,  load_documents, insert_new_folder, load_folders, save_timer_session, extract_title};
 use tauri::command;
 use error::AppError;
 use std::fs;
@@ -111,23 +111,33 @@ fn gen_side_bar_list_command() -> Result<Vec<Document>, String> {
 }
 
 #[tauri::command]
-fn update_document_command(id: i64, doc: EditorDocument) -> Result<(), String> {
+fn update_document_command(id: i64, doc: EditorDocument, folderId: Option<i64>) -> Result<(), String> {
     println!("update_document_command");
+    
+    // Open database connection
     let conn = Connection::open(DB_PATH).map_err(|e| e.to_string())?;
-    // let doc_json = serde_json::to_string(&doc)?;
+    
+    // Convert `doc` to JSON
     let doc_json = match serde_json::to_string(&doc) {  
-    Ok(json) => json,
-    Err(e) => e.to_string(),
+        Ok(json) => json,
+        Err(e) => return Err(format!("Failed to serialize document: {}", e)),
     };
+    
     println!("{}", &doc_json);
+    
+    // Extract title from JSON
+    let extracted_title = extract_title(&doc_json).unwrap_or_else(|| "Untitled".to_string());
 
+    // Create a `Document` struct instance with extracted title and provided folder ID
     let db_doc: Document = Document {
         id: id,
-        title: ("TestTitle").to_string(),
-        time: (&doc.time).to_string(),
+        title: extracted_title,  // Dynamically extracted from JSON
+        time: doc.time.to_string(),
         content: doc_json,
-        folder_id: None,  // Set folder_id to None or provide the appropriate folder_id
+        folder_id: folderId,  // Passed in from function argument
     };
+
+    // Call `update_document` function
     update_document(&conn, id, &db_doc).map_err(|e| e.to_string())
 }
 

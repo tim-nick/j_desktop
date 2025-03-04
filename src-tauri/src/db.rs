@@ -210,33 +210,46 @@ pub fn gen_side_bar_list(conn: &Connection) -> Result<Vec<Document>, AppError> {
 }
 
 pub fn update_document(conn: &Connection, id: i64, new_doc: &Document) -> Result<(), AppError> {
-    // Serialize the document content to JSON
-    // let new_doc_json = serde_json::to_string(&new_doc.content)?;
-    
     // Print the new document content for debugging
     println!("Updating document with ID: {}", id);
     println!("New title: {}", &new_doc.title);
     println!("New time: {}", &new_doc.time);
     println!("New content: {}", &new_doc.content);
-    
-    // Execute the update query
-    let rows_affected = conn.execute(
-        "UPDATE documents SET title = ?, time = ?, content = ? WHERE id = ?",
-        params![&new_doc.title, &new_doc.time, &new_doc.content, &id]
-    )?;
-    
+    println!("New folder_id: {:?}", &new_doc.folder_id);
+
+    // Convert folder_id properly for SQLite (if present)
+    let folder_id_value = new_doc.folder_id.map(|v| v as i64);
+
+    let sql_query = if folder_id_value.is_some() {
+        // If `folder_id` is `Some`, include it in the update
+        "UPDATE documents SET title = ?, time = ?, content = ?, folder_id = ? WHERE id = ?"
+    } else {
+        // If `folder_id` is `None`, do NOT update it (omit `folder_id` from the query)
+        "UPDATE documents SET title = ?, time = ?, content = ? WHERE id = ?"
+    };
+
+    let rows_affected = if let Some(folder_id) = folder_id_value {
+        // Execute query with folder_id when it's Some(value)
+        conn.execute(sql_query, params![&new_doc.title, &new_doc.time, &new_doc.content, folder_id, &id])?
+    } else {
+        // Execute query without folder_id when it's None
+        conn.execute(sql_query, params![&new_doc.title, &new_doc.time, &new_doc.content, &id])?
+    };
+
     // Log the number of rows affected
     println!("Rows affected: {}", rows_affected);
-    
+
     // Check if the update was successful
     if rows_affected == 0 {
         println!("Warning: No document found with ID: {}", id);
     } else {
         println!("Document updated successfully.");
     }
-    
+
     Ok(())
 }
+
+
 
 // Function to insert a new folder with an optional parent_id
 pub fn insert_new_folder(conn: &Connection, name: &str, parent_id: Option<i64>) -> Result<(), rusqlite::Error> {
