@@ -26,8 +26,8 @@ mod error;
 
 // const DB_PATH: &str = "../sqlite_database/documents.db";
 // const DB_PATH: &str = "/Users/tim/Documents/Programming/Projects/J.A.R.V.I.S./database/database.db";
-const DB_PATH: &str = "/Users/tim/Documents/Programming/Projects/personal_assistant/knowledge-graph/pa_db.db";
-
+// const DB_PATH: &str = "/Users/tim/Documents/Programming/Projects/personal_assistant/knowledge-graph/pa_db.db";
+const DB_PATH: &str = "/Users/tim/Documents/Programming/Projects/personal_assistant/knowledge-graph/test_data.db";
 // TODO: currently gets foldername as input not filenames fix it to get file isa or file names 
 #[tauri::command]
 fn folder_clicked(name: String) -> Result<EditorDocument, String> {
