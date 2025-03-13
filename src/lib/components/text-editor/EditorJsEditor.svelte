@@ -120,7 +120,8 @@
       const doc = await editor.save();
       console.log('Saving document:', doc);
       const inputFolderId = document.getElementById('folderId') as HTMLInputElement;
-      folderId = parseInt(inputFolderId.value, 10);
+      const folderIdValue = inputFolderId.value;
+      folderId = folderIdValue ? parseInt(folderIdValue, 10) : 1;
       await invoke('save_document_command', { doc, folderId });
       console.log('Document saved successfully');
     } catch (error) {

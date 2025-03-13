@@ -310,3 +310,6 @@ cypress/screenshots
 
 # backend config
 backend/config.json
+
+# data
+client_db
