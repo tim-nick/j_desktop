@@ -7,7 +7,7 @@ use std::env;
 use std::path::Path;
 use std::thread;
 use std::sync::Arc;
-use db::{EditorDocument, Document, Folder,  PythonBackendDocument, TimerSession, save_document,load_document, load_document_for_editor, gen_side_bar_list, update_document,  load_documents, insert_new_folder, load_folders, save_timer_session, extract_title};
+use db::{EditorDocument, Document, Folder, PythonBackendDocument, TimerSession, save_document, load_document, load_document_for_editor, gen_side_bar_list, update_document, load_documents, insert_new_folder, load_folders, save_timer_session, extract_title};
 use tauri::command;
 use error::AppError;
 use std::fs;
@@ -21,154 +21,34 @@ use tokio::sync::Mutex;
 mod db;
 mod error;
 
+// Add AppMode enum to track online/offline mode
+#[derive(Debug)]
+enum AppMode {
+    Online,
+    Offline,
+}
+
+// Update DbState to include the mode
 struct DbState {
     conn: Arc<Mutex<Connection>>,
+    mode: AppMode,
 }
 
-// const DB_PATH: &str = "../sqlite_database/documents.db";
-// const DB_PATH: &str = "/Users/tim/Documents/Programming/Projects/J.A.R.V.I.S./database/database.db";
-// const DB_PATH: &str = "/Users/tim/Documents/Programming/Projects/personal_assistant/knowledge-graph/pa_db.db";
-// const DB_PATH: &str = "/Users/tim/Documents/Programming/Projects/personal_assistant/knowledge-graph/test_data.db";
-// TODO: currently gets foldername as input not filenames fix it to get file isa or file names 
-#[tauri::command]
-async fn folder_clicked(name: String, state: tauri::State<'_, DbState>) -> Result<EditorDocument, String> {
-    println!("Retrieving doc command ");
-    println!("{}", &name);
-    
-    // Attempt to parse the string into an i64
-    let num = match name.parse::<i64>() {
-        Ok(num) => {
-            println!("Converted number: {}", num);
-            num
-        }
-        Err(e) => return Err(format!("Failed to convert: {}", e)),
-    };
-
-    let conn_guard = state.conn.lock().await;
-    let conn = &*conn_guard;
-    
-    // Call load_document_for_editor only if conversion succeeded
-    load_document_for_editor(conn, num).await.map_err(|e| e.to_string())
-}
-
-
-#[tauri::command]
-async fn fetch_documents_command(state: tauri::State<'_, DbState>) -> Result<Vec<Document>, String> {
-    println!("Executing load document command");
-    let conn_guard = state.conn.lock().await;
-    let conn = &*conn_guard;
-    
-    load_documents(conn).await.map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn fetch_folders_command(state: tauri::State<'_, DbState>) -> Result<Vec<Folder>, String> {
-    println!("Executing load folders command");
-    
-    let conn_guard = state.conn.lock().await;
-    let conn = &*conn_guard;
-    
-    load_folders(conn).await.map_err(|e| {
-        eprintln!("Error loading folders: {}", e);
-        e.to_string()
-    })
-}
-
-
-
-#[tauri::command]
-async fn create_new_folder_command(name: String, parent_id: Option<i64>, state: tauri::State<'_, DbState>) -> Result<(), String> {
-    println!("Received in Rust -> name: '{}', parent_id: {:?}", name, parent_id);
-    
-    let conn_guard = state.conn.lock().await;
-    let conn = &*conn_guard;
-    
-    insert_new_folder(conn, &name, parent_id).await.map_err(|e| e.to_string())?;
-    
+// ------------------------
+// Helper: Log offline operations
+// ------------------------
+async fn log_offline_operation(conn: &Connection, op_type: &str, payload: &str) -> Result<(), Box<dyn std::error::Error>> {
+    conn.execute(
+        "INSERT INTO change_log (op_type, payload) VALUES (?, ?)",
+        (op_type, payload)
+    ).await?;
+    println!("Logged offline operation: {}", op_type);
     Ok(())
 }
 
-
-
-#[tauri::command]
-async fn save_document_command(doc: EditorDocument, folderId: i64, state: tauri::State<'_, DbState>) -> Result<(), String> {
-    println!("Executing save document command");
-    let conn_guard = state.conn.lock().await;
-    let conn = &*conn_guard;
-    
-    save_document(conn, &doc, &folderId).await.map_err(|e| e.to_string())?;
-
-    // Use async spawn to handle the asynchronous request to the Python backend
-    
-    Ok(())
-}
-
-#[tauri::command]
-async fn load_document_command(id: i64, state: tauri::State<'_, DbState>) -> Result<EditorDocument, String> {
-    println!("Executing load document command");
-    let conn_guard = state.conn.lock().await;
-    let conn = &*conn_guard;
-    
-    load_document_for_editor(conn, id).await.map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn gen_side_bar_list_command(state: tauri::State<'_, DbState>) -> Result<Vec<Document>, String> {
-    println!("gen_side_bar_list command");
-    let conn_guard = state.conn.lock().await;
-    let conn = &*conn_guard;
-    
-    gen_side_bar_list(conn).await.map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn update_document_command(id: i64, doc: EditorDocument, folderId: Option<i64>, state: tauri::State<'_, DbState>) -> Result<(), String> {
-    println!("update_document_command");
-    
-    // Open database connection
-    let conn_guard = state.conn.lock().await;
-    let conn = &*conn_guard;
-    
-    // Convert `doc` to JSON
-    let doc_json = match serde_json::to_string(&doc) {  
-        Ok(json) => json,
-        Err(e) => return Err(format!("Failed to serialize document: {}", e)),
-    };
-    
-    println!("{}", &doc_json);
-    
-    // Extract title from JSON
-    let extracted_title = extract_title(&doc_json).unwrap_or_else(|| "Untitled".to_string());
-
-    // Create a `Document` struct instance with extracted title and provided folder ID
-    let db_doc: Document = Document {
-        id: id,
-        title: extracted_title,  // Dynamically extracted from JSON
-        time: doc.time.to_string(),
-        content: doc_json,
-        folder_id: folderId,  // Passed in from function argument
-    };
-
-    // Call `update_document` function
-    update_document(conn, id, &db_doc).await.map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn save_timer_session_command(session: TimerSession, state: tauri::State<'_, DbState>) -> Result<(), String> {
-    println!("Executing save timer session command");
-     // Log the incoming session data for debugging
-     println!("Save Session: {:?}", session);
-    let conn_guard = state.conn.lock().await;
-    let conn = &*conn_guard;
-    
-    save_timer_session(conn, &session).await.map_err(|e| e.to_string())?;
-    println!("Timer session saved successfully.");
-    Ok(())
-}
-
-
-// New asynchronous version of initialize_database using libsql
-
+// ------------------------
+// Extend initialize_database to create change_log table
+// ------------------------
 async fn initialize_database(conn: &Connection) -> Result<(), Box<dyn std::error::Error>> {
     println!("Creating database tables if they don't exist...");
     
@@ -215,7 +95,179 @@ async fn initialize_database(conn: &Connection) -> Result<(), Box<dyn std::error
         ()
     ).await?;
     
+    // Create the change_log table for offline operation logging
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS change_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            op_type TEXT NOT NULL,
+            payload TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )",
+        ()
+    ).await?;
+    
     println!("Database initialized successfully.");
+    Ok(())
+}
+
+#[tauri::command]
+async fn folder_clicked(name: String, state: tauri::State<'_, DbState>) -> Result<EditorDocument, String> {
+    println!("Retrieving doc command ");
+    println!("{}", &name);
+    
+    // Attempt to parse the string into an i64
+    let num = match name.parse::<i64>() {
+        Ok(num) => {
+            println!("Converted number: {}", num);
+            num
+        }
+        Err(e) => return Err(format!("Failed to convert: {}", e)),
+    };
+
+    let conn_guard = state.conn.lock().await;
+    let conn = &*conn_guard;
+    
+    // Call load_document_for_editor only if conversion succeeded
+    load_document_for_editor(conn, num).await.map_err(|e| e.to_string())
+}
+
+
+#[tauri::command]
+async fn fetch_documents_command(state: tauri::State<'_, DbState>) -> Result<Vec<Document>, String> {
+    println!("Executing load document command");
+    let conn_guard = state.conn.lock().await;
+    let conn = &*conn_guard;
+    
+    load_documents(conn).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn fetch_folders_command(state: tauri::State<'_, DbState>) -> Result<Vec<Folder>, String> {
+    println!("Executing load folders command");
+    
+    let conn_guard = state.conn.lock().await;
+    let conn = &*conn_guard;
+    
+    load_folders(conn).await.map_err(|e| {
+        eprintln!("Error loading folders: {}", e);
+        e.to_string()
+    })
+}
+
+
+#[tauri::command]
+async fn create_new_folder_command(name: String, parent_id: Option<i64>, state: tauri::State<'_, DbState>) -> Result<(), String> {
+    println!("Received in Rust -> name: '{}', parent_id: {:?}", name, parent_id);
+    
+    let conn_guard = state.conn.lock().await;
+    let conn = &*conn_guard;
+    
+    insert_new_folder(conn, &name, parent_id).await.map_err(|e| e.to_string())?;
+
+    // Log offline operation if in offline mode
+    if let AppMode::Offline = state.mode {
+        let payload = json!({ "name": name, "parent_id": parent_id }).to_string();
+        if let Err(e) = log_offline_operation(conn, "create_new_folder", &payload).await {
+            println!("Failed to log offline operation: {}", e);
+        }
+    }
+
+    Ok(())
+}
+
+
+#[tauri::command]
+async fn save_document_command(doc: EditorDocument, folderId: i64, state: tauri::State<'_, DbState>) -> Result<(), String> {
+    println!("Executing save document command");
+    let conn_guard = state.conn.lock().await;
+    let conn = &*conn_guard;
+    
+    save_document(conn, &doc, &folderId).await.map_err(|e| e.to_string())?;
+    
+    // Log offline operation if in offline mode
+    if let AppMode::Offline = state.mode {
+        let payload = json!({ "doc": doc, "folderId": folderId }).to_string();
+        if let Err(e) = log_offline_operation(conn, "save_document", &payload).await {
+            println!("Failed to log offline operation: {}", e);
+        }
+    }
+    
+    Ok(())
+}
+
+#[tauri::command]
+async fn load_document_command(id: i64, state: tauri::State<'_, DbState>) -> Result<EditorDocument, String> {
+    println!("Executing load document command");
+    let conn_guard = state.conn.lock().await;
+    let conn = &*conn_guard;
+    
+    load_document_for_editor(conn, id).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn gen_side_bar_list_command(state: tauri::State<'_, DbState>) -> Result<Vec<Document>, String> {
+    println!("gen_side_bar_list command");
+    let conn_guard = state.conn.lock().await;
+    let conn = &*conn_guard;
+    
+    gen_side_bar_list(conn).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn update_document_command(id: i64, doc: EditorDocument, folderId: Option<i64>, state: tauri::State<'_, DbState>) -> Result<(), String> {
+    println!("update_document_command");
+    
+    let conn_guard = state.conn.lock().await;
+    let conn = &*conn_guard;
+    
+    let doc_json = match serde_json::to_string(&doc) {
+        Ok(json) => json,
+        Err(e) => return Err(format!("Failed to serialize document: {}", e)),
+    };
+    
+    println!("{}", &doc_json);
+    
+    let extracted_title = extract_title(&doc_json).unwrap_or_else(|| "Untitled".to_string());
+
+    let db_doc: Document = Document {
+        id: id,
+        title: extracted_title,
+        time: doc.time.to_string(),
+        content: doc_json,
+        folder_id: folderId,
+    };
+
+    update_document(conn, id, &db_doc).await.map_err(|e| e.to_string())?;
+    
+    // Log offline operation if in offline mode
+    if let AppMode::Offline = state.mode {
+        let payload = json!({ "id": id, "doc": db_doc, "folderId": folderId }).to_string();
+        if let Err(e) = log_offline_operation(conn, "update_document", &payload).await {
+            println!("Failed to log offline operation: {}", e);
+        }
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn save_timer_session_command(session: TimerSession, state: tauri::State<'_, DbState>) -> Result<(), String> {
+    println!("Executing save timer session command");
+    println!("Save Session: {:?}", session);
+    let conn_guard = state.conn.lock().await;
+    let conn = &*conn_guard;
+    
+    save_timer_session(conn, &session).await.map_err(|e| e.to_string())?;
+    println!("Timer session saved successfully.");
+    
+    // Log offline operation if in offline mode
+    if let AppMode::Offline = state.mode {
+        let payload = json!({ "session": session }).to_string();
+        if let Err(e) = log_offline_operation(conn, "save_timer_session", &payload).await {
+            println!("Failed to log offline operation: {}", e);
+        }
+    }
+    
     Ok(())
 }
 
@@ -224,49 +276,81 @@ fn main() {
     let conn = tauri::async_runtime::block_on(async {
         let primary_url = "http://127.0.0.1:9090";
         let auth_token = "";
-
-        // TODO: implened snyc mechnism between local  an online mode with 
         
-        // Always create a remote replica connection with offline queuing support
-        let db = Builder::new_remote_replica(
-            "/Users/tim/Documents/Programming/Projects/jarvis_note/j_desktop/client_db/local.db",
-            primary_url.to_string(),
-            auth_token.to_string()
-        )
-        .sync_interval(std::time::Duration::from_secs(60))
-        .build()
-        .await
-        .unwrap_or_else(|e| {
-            println!("Error building remote replica: {:?}. Falling back to local-only database.", e);
-            // Log the error and fallback to a local-only connection if remote replica creation fails
-            tauri::async_runtime::block_on(async {
-                Builder::new_local("/Users/tim/Documents/Programming/Projects/jarvis_note/j_desktop/client_db/local.db")
-                    .build()
-                    .await
-                    .expect("Failed to build local database")
-            })
-        });
-
+        // Check if the primary is reachable
+        let primary_available = {
+            let client = Client::new();
+            match client.get(primary_url).send().await {
+                Ok(resp) => {
+                    if resp.status().is_success() {
+                        println!("Primary is available. Starting in online mode.");
+                        true
+                    } else {
+                        println!("Primary responded with status: {}. Switching to offline mode.", resp.status());
+                        false
+                    }
+                },
+                Err(e) => {
+                    println!("Failed to reach primary: {:?}. Switching to offline mode.", e);
+                    false
+                }
+            }
+        };
+        
+        // Build the database connection based on primary availability
+        let db = if primary_available {
+            // Online mode: build remote replica with offline queuing support
+            Builder::new_remote_replica(
+                "/Users/tim/Documents/Programming/Projects/jarvis_note/j_desktop/client_db/local.db",
+                primary_url.to_string(),
+                auth_token.to_string()
+            )
+            .sync_interval(std::time::Duration::from_secs(60))
+            .build()
+            .await
+            .expect("Failed to build remote replica")
+        } else {
+            // Offline mode: build a local database that supports writes
+            println!("Using local-only database. Offline mode enabled. Logging offline operations.");
+            Builder::new_local("/Users/tim/Documents/Programming/Projects/jarvis_note/j_desktop/client_db/local.db")
+                .build()
+                .await
+                .expect("Failed to build local database")
+        };
+        
         // Establish connection to the database
         let conn = db.connect().expect("Failed to connect to db");
         println!("CREATED DATABASE!");
-
+        
         // Initialize the database schema (creates tables if they don't exist)
         if let Err(e) = initialize_database(&conn).await {
-            // Log any schema initialization errors (including WriteDelegation errors in offline mode) without interrupting connection creation
             println!("Schema initialization error (possibly due to offline mode): {:?}", e);
         }
-
+        
         conn
     });
-
+    
     println!("Database connection established and initialized.");
-
-    // Wrap the connection in Arc and Mutex as before
+    
+    // Determine app mode based on primary connectivity
+    let mode = if tauri::async_runtime::block_on(async {
+        let client = Client::new();
+        match client.get("http://127.0.0.1:9090").send().await {
+            Ok(resp) => resp.status().is_success(),
+            Err(_) => false,
+        }
+    }) {
+        AppMode::Online
+    } else {
+        AppMode::Offline
+    };
+    
+    // Wrap the connection in Arc and Mutex along with the app mode
     let db_state = DbState {
         conn: Arc::new(Mutex::new(conn)),
+        mode,
     };
-
+    
     tauri::Builder::default()
         .manage(db_state)  // Register the shared state
         .invoke_handler(tauri::generate_handler![
